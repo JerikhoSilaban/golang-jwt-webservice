@@ -22,6 +22,7 @@ func ProductAuthorization() gin.HandlerFunc {
 
 			return
 		}
+
 		Product := models.Product{}
 
 		err = db.Select("user_id").First(&Product, uint(productID)).Error
@@ -35,7 +36,14 @@ func ProductAuthorization() gin.HandlerFunc {
 		}
 
 		userData := ctx.MustGet("userData").(jwt.MapClaims)
-		admin := userData["admin"].(bool)
+		admin, ok := userData["admin"].(bool)
+		if !ok {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"error":   "Internal Server Error",
+				"message": "Unable to retrieve admin status",
+			})
+		}
+
 		if !admin {
 			userID := uint(userData["id"].(float64))
 			if Product.UserID != userID {
